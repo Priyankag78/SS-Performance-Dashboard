@@ -1,4 +1,5 @@
 import csv, json, io
+from collections import Counter
 import urllib.request as req
 import urllib.parse as parse
 
@@ -14,7 +15,6 @@ def fetch_sheet(sheet_name):
 def parse_overall(csv_text):
     lines = csv_text.strip().split('\n')
     data = []
-    # Auto-detect first row where col A is a 10-digit SS number
     start = 0
     for i, line in enumerate(lines):
         reader = csv.reader(io.StringIO(line))
@@ -23,7 +23,6 @@ def parse_overall(csv_text):
         if val.isdigit() and len(val) >= 9:
             start = i
             break
-    print(f'Overall data starts at line index {start}')
     for line in lines[start:]:
         reader = csv.reader(io.StringIO(line))
         cols = next(reader)
@@ -31,21 +30,8 @@ def parse_overall(csv_text):
         ss = cols[0].strip()
         if not ss or not ss.isdigit() or ss == '0': continue
         def g(i): return cols[i].strip() if len(cols) > i else ''
-        data.append({
-            'ss':             ss,
-            'attempted':      g(1),   # Col B - Orders Attempted
-            'ground':         g(2),   # Col C - Ground Orders
-            'old':            g(3),   # Col D - Old Orders
-            'placed':         g(4),   # Col E - Actual Orders Placed
-            'delivered':      g(5),   # Col F - Delivered Orders
-            'rto':            g(6),   # Col G - RTO
-            'cancelled':      g(7),   # Col H - Cancelled
-            'placementBonus': g(8),   # Col I - Placement Bonus
-            'colM':           g(9),   # Col J - Actual Orders Delivered
-            'colN':           g(10),  # Col K - Delivery Bonus
-            'typeOfOrder':    '',
-            'orderStatus':    '',
-        })
+        data.append({'ss':ss,'attempted':g(1),'ground':g(2),'old':g(3),'placed':g(4),
+            'delivered':g(5),'rto':g(6),'cancelled':g(7),'placementBonus':g(8),'colM':g(9),'colN':g(10)})
     print(f'Overall: {len(data)} rows')
     return data
 
@@ -53,21 +39,35 @@ def parse_detail(csv_text):
     reader = csv.reader(io.StringIO(csv_text))
     next(reader)
     data = []
+    type_counts = {}
+    status_counts = {}
     for cols in reader:
         if not cols or len(cols) < 2 or not cols[1].strip(): continue
         def g(i): return cols[i].strip() if len(cols) > i else ''
-        data.append({
-            'ss':            g(1),
-            'retailer':      g(0),
-            'so':            g(16),
-            'formDate':      g(3),
-            'type':          g(4),
-            'orderStatus':   g(20),
-            'placedBonus':   g(13),
-            'deliveryBonus': g(17),
-        })
+        ss = g(1)
+        col_t = g(19)
+        col_u = g(20)
+        if col_t in ('Considered', 'Old Order'):
+            type_counts.setdefault(ss, Counter())[col_t] += 1
+        if col_u:
+            status_counts.setdefault(ss, Counter())[col_u] += 1
+        data.append({'ss':ss,'retailer':g(0),'so':g(16),'formDate':g(3),'type':g(4),
+            'orderStatus':g(20),'placedBonus':g(13),'deliveryBonus':g(17)})
     print(f'Detail: {len(data)} rows')
-    return data
+    return data, type_counts, status_counts
+
+def merge_overall(overall, type_counts, status_counts):
+    for row in overall:
+        ss = row['ss']
+        tc = type_counts.get(ss, {})
+        sc = status_counts.get(ss, {})
+        row['considered'] = str(tc.get('Considered', 0))
+        row['oldOrder']   = str(tc.get('Old Order', 0))
+        row['delivered']  = str(sc.get('Delivered', 0))
+        row['inProcess']  = str(sc.get('In Process', 0) + sc.get('In Progress', 0))
+        row['returned']   = str(sc.get('Order Return', 0))
+        row['cancelled']  = str(sc.get('Order Cancelled', 0))
+    return overall
 
 def build_html(overall, detail):
     OVERALL_JS = json.dumps(overall, separators=(',',':'))
@@ -85,6 +85,7 @@ if __name__ == '__main__':
     overall_csv = fetch_sheet('Overall performance')
     detail_csv  = fetch_sheet('Model')
     overall     = parse_overall(overall_csv)
-    detail      = parse_detail(detail_csv)
+    detail, type_counts, status_counts = parse_detail(detail_csv)
+    overall     = merge_overall(overall, type_counts, status_counts)
     build_html(overall, detail)
     print('Done!')
