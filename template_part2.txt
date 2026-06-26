@@ -11,6 +11,7 @@ function pillClass(s){
   if(sl.indexOf('considered')>=0) return 'pill-green';
   if(sl.indexOf('process')>=0||sl.indexOf('progress')>=0) return 'pill-yellow';
   if(sl.indexOf('old')>=0) return 'pill-grey';
+  if(sl.indexOf('ground')>=0) return 'pill-yellow';
   if(sl.indexOf('return')>=0||sl.indexOf('cancel')>=0) return 'pill-red';
   return 'pill-grey';
 }
@@ -34,25 +35,26 @@ function render(mobNum,rows,ov){
   var placBonus=ov?n(ov.placementBonus):0;
   var colNVal=ov?n(ov.colN):0;
   var grand=placBonus+colNVal;
-  document.getElementById('heroAvatar').textContent=mobNum.slice(-2);
   document.getElementById('heroInfo').innerHTML='<h2>SS: '+mobNum+'</h2><p>June 2026 Performance</p>';
   document.getElementById('heroEarning').innerHTML='<div class="lbl">Total Earnings</div><div class="val">&#8377;'+grand.toLocaleString('en-IN')+'</div>';
   if(ov){
-    var att=ni(ov.attempted),plc=ni(ov.placed),delCount=ni(ov.colM),gnd=ni(ov.ground);
-    var delSt=ni(ov.delivered),inProc=ni(ov.inProcess),oldOrd=ni(ov.oldOrder),ret=ni(ov.returned),canc=ni(ov.cancelled);
+    var att=ni(ov.attempted),plc=ni(ov.placed),delCount=ni(ov.colM);
+    var considered=ni(ov.considered),oldOrd=ni(ov.oldOrder),gndTeam=ni(ov.groundTeam);
+    var delSt=ni(ov.delivered),inProc=ni(ov.inProcess),inProg=ni(ov.inProgress),canc=ni(ov.cancelled);
     document.getElementById('overallGrids').innerHTML=
       ogroup('&#128230; Order Split',
         ostat('Orders Attempted',att)+
         ostat('Orders Placed',plc,'safe')+
         ostat('Delivery Count',delCount,'safe'))+
       ogroup('&#128203; Type of Order',
+        ostat('Considered',considered,'safe')+
+        ostat('Old Order',oldOrd,oldOrd>0?'warn':'')+
+        ostat('Ground Team',gndTeam))+
+      ogroup('&#128666; Order Status',
         ostat('Delivered',delSt,'safe')+
         ostat('In Process',inProc,inProc>0?'warn':'')+
-        ostat('Old Order',oldOrd,oldOrd>0?'warn':'')+
-        ostat('Ground Orders',gnd))+
-      ogroup('&#128666; Order Status',
-        ostat('Order Return',ret,ret>0?'danger':'')+
-        ostat('Cancelled',canc,canc>0?'danger':''))+
+        ostat('Order Cancelled',canc,canc>0?'danger':'')+
+        ostat('In Progress',inProg,inProg>0?'warn':''))+
       ogroup('&#128176; Bonus Summary',
         ostat('Order Placed Bonus','&#8377;'+placBonus.toLocaleString('en-IN'),'safe')+
         ostat('Delivery Bonus','&#8377;'+colNVal.toLocaleString('en-IN'),'safe'));
