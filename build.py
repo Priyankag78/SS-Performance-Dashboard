@@ -52,8 +52,8 @@ def parse_detail(csv_text):
         if not cols or len(cols) < 2 or not cols[1].strip(): continue
         def g(i): return cols[i].strip() if len(cols) > i else ''
         ss = g(1)
-        col_t = g(19)
-        col_u = g(20)
+        col_t = g(21)
+        col_u = g(22)
         if col_t in ('Considered', 'Old Order'):
             type_counts.setdefault(ss, Counter())[col_t] += 1
         if col_u:
