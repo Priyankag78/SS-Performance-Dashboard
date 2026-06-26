@@ -1,28 +1,17 @@
-#!/usr/bin/env python3
-"""
-Build script: fetches both Google Sheet tabs and builds index.html
-Run locally or via GitHub Actions - auto-triggers daily
-"""
-import csv, json, sys, io
+import csv, json, io
 import urllib.request as req
+import urllib.parse as parse
 
 SHEET_ID = '1jjJvuePQNW-S0QAUC0EyVd_Lx0IHYbksOheJEYmwuFA'
 
 def fetch_sheet(sheet_name):
-    url = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
-    print(f'Fetching: {sheet_name}...')
+    encoded = parse.quote(sheet_name)
+    url = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={encoded}'
+    print(f'Fetching: {sheet_name} ...')
     with req.urlopen(url) as r:
         return r.read().decode('utf-8')
 
 def parse_overall(csv_text):
-    """
-    Overall performance tab:
-    Col A=SS Number, Col B=Attempted, Col C=Ground, Col D=Old,
-    Col E=Placed, Col F=Delivered, Col G=RTO, Col H=Cancelled,
-    Col I=Placement Bonus, Col M=Delivery Bonus Online,
-    Col N=Delivery Bonus Offline, Col P=Type of order, Col Q=Order status
-    Header on row 3, data from row 4
-    """
     lines = csv_text.strip().split('\n')
     data = []
     for line in lines[3:]:
@@ -41,39 +30,31 @@ def parse_overall(csv_text):
             'delivered':      g(5),
             'rto':            g(6),
             'cancelled':      g(7),
-            'placementBonus': g(8),   # Col I
-            'colM':           g(12),  # Col M = Delivery Bonus Online
-            'colN':           g(13),  # Col N = Delivery Bonus Offline
-            'typeOfOrder':    g(15),  # Col P
-            'orderStatus':    g(16),  # Col Q
+            'placementBonus': g(8),
+            'colM':           g(12),
+            'colN':           g(13),
+            'typeOfOrder':    g(15),
+            'orderStatus':    g(16),
         })
     print(f'Overall: {len(data)} rows')
     return data
 
 def parse_detail(csv_text):
-    """
-    Model tab:
-    Col A=Retailer, Col B=SS Number, Col D=Form Date,
-    Col E=Type of Order, Col N=Actual Bonus (Placed Bonus),
-    Col Q=SO Number, Col R=RTO (Delivery Bonus as requested),
-    Col T=Type of order, Col U=Order status
-    """
     reader = csv.reader(io.StringIO(csv_text))
-    headers = next(reader)
+    next(reader)
     data = []
     for cols in reader:
-        if not cols or not cols[1].strip(): continue
-        ss = cols[1].strip()
+        if not cols or len(cols) < 2 or not cols[1].strip(): continue
         def g(i): return cols[i].strip() if len(cols) > i else ''
         data.append({
-            'ss':            ss,
-            'retailer':      g(0),   # Col A
-            'so':            g(16),  # Col Q = SO Number
-            'formDate':      g(3),   # Col D
-            'type':          g(4),   # Col E = Type of Order
-            'orderStatus':   g(20),  # Col U = Order status
-            'placedBonus':   g(13),  # Col N = Actual Bonus
-            'deliveryBonus': g(17),  # Col R = RTO (as requested)
+            'ss':            g(1),
+            'retailer':      g(0),
+            'so':            g(16),
+            'formDate':      g(3),
+            'type':          g(4),
+            'orderStatus':   g(20),
+            'placedBonus':   g(13),
+            'deliveryBonus': g(17),
         })
     print(f'Detail: {len(data)} rows')
     return data
@@ -81,12 +62,10 @@ def parse_detail(csv_text):
 def build_html(overall, detail):
     OVERALL_JS = json.dumps(overall, separators=(',',':'))
     DETAIL_JS  = json.dumps(detail,  separators=(',',':'))
-
     with open('template_part1.txt') as f:
         part1 = f.read()
     with open('template_part2.txt') as f:
         part2 = f.read()
-
     html = part1 + 'const OVERALL=' + OVERALL_JS + ';\nconst DETAIL=' + DETAIL_JS + ';' + part2
     with open('index.html', 'w') as f:
         f.write(html)
