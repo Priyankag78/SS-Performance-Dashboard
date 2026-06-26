@@ -30,98 +30,58 @@ def parse_overall(csv_text):
         ss = cols[0].strip()
         if not ss or not ss.isdigit() or ss == '0': continue
         def g(i): return cols[i].strip() if len(cols) > i else ''
-        
         overall.append({
-            'ss':              ss,
-            'attempted':       g(1), 
-            'placementBonus': g(8), 
+            'ss':             ss,
+            'attempted':      g(1),
+            'placed':         g(4),
+            'rto':            g(6),
+            'placementBonus': g(8),
             'colM':           g(9),
             'colN':           g(10),
-            'actualPlaced':   0,    
-            'delivered':      0,    
-            'inProcess':      0,    
-            'returned':       0,    
-            'cancelled':      0     
         })
     print(f'Overall: {len(overall)} rows')
     return overall
 
 def parse_detail(csv_text):
     reader_obj = csv.reader(io.StringIO(csv_text))
-    
-    # Dynamically read headers to find the exact column mappings
-    headers = [h.strip().lower() for h in next(reader_obj)]
-    
-    # Safely search for index by checking standard naming conventions
-    def find_idx(possible_names):
-        for name in possible_names:
-            if name in headers:
-                return headers.index(name)
-        return -1
-
-    idx_ss = find_idx(['ss', 'ss number', 'ss_number'])
-    idx_retailer = find_idx(['retailer', 'retailer number', 'retailer_number'])
-    idx_so = find_idx(['so', 'so number', 'so_number'])
-    idx_date = find_idx(['form date', 'form_date', 'date'])
-    idx_type = find_idx(['type of order', 'type_of_order', 'type'])
-    idx_status = find_idx(['order status', 'order_status', 'status'])
-    idx_bonus = find_idx(['bonus payment', 'bonus_payment', 'bonus'])
-    idx_delivery = find_idx(['delivery payment', 'delivery_payment', 'delivery'])
-
-    # Fallback to defaults if a column name isn't dynamically hit
-    if idx_ss == -1: idx_ss = 1
-    if idx_retailer == -1: idx_retailer = 0
-    if idx_so == -1: idx_so = 16
-    if idx_date == -1: idx_date = 3
-    if idx_type == -1: idx_type = 21
-    if idx_status == -1: idx_status = 22
-    if idx_bonus == -1: idx_bonus = 14
-    if idx_delivery == -1: idx_delivery = 18
-
+    next(reader_obj)
     detail = []
+    type_counts = {}
     status_counts = {}
-    
     for cols in reader_obj:
-        if not cols or len(cols) <= max(idx_ss, idx_retailer): continue
-        
-        def g(i): return cols[i].strip() if i >= 0 and len(cols) > i else ''
-        
-        ss = g(idx_ss)
-        if not ss: continue
-        
-        col_t = g(idx_type)    # Type of Order
-        col_u = g(idx_status)  # Order Status
-        
+        if not cols or len(cols) < 2 or not cols[1].strip(): continue
+        def g(i): return cols[i].strip() if len(cols) > i else ''
+        ss = g(1)
+        col_t = g(19)
+        col_u = g(20)
+        if col_t in ('Considered', 'Old Order'):
+            type_counts.setdefault(ss, Counter())[col_t] += 1
         if col_u:
             status_counts.setdefault(ss, Counter())[col_u] += 1
-            if col_u not in ('Cancelled', 'Order Cancelled'):
-                status_counts[ss]['__actual_placed__'] += 1
-                
         detail.append({
-            'ss':              ss,
-            'retailer':        g(idx_retailer),
-            'so':              g(idx_so),
-            'formDate':        g(idx_date),
-            'typeOfOrder':     col_t,
-            'orderStatus':     col_u,
-            'bonusPayment':    g(idx_bonus),
-            'deliveryPayment': g(idx_delivery),
+            'ss':            ss,
+            'retailer':      g(0),
+            'so':            g(16),
+            'formDate':      g(3),
+            'typeOfOrder':   g(19),
+            'orderStatus':   g(20),
+            'placedBonus':   g(13),
+            'deliveryBonus': g(15),
         })
-        
-    print(f'Detail: {len(detail)} rows mapped successfully.')
-    return detail, status_counts
+    print(f'Detail: {len(detail)} rows')
+    return detail, type_counts, status_counts
 
-def merge_overall(overall, status_counts):
+def merge_overall(overall, type_counts, status_counts):
     for row in overall:
         ss = row['ss']
+        tc = type_counts.get(ss, {})
         sc = status_counts.get(ss, {})
-        
-        row['actualPlaced'] = str(sc.get('__actual_placed__', 0))
+        row['considered'] = str(tc.get('Considered', 0))
+        row['oldOrder']   = str(tc.get('Old Order', 0))
         row['delivered']  = str(sc.get('Delivered', 0))
         row['inProcess']  = str(sc.get('In Process', 0) + sc.get('In Progress', 0))
-        row['returned']   = str(sc.get('Order Return', 0) + sc.get('Returned', 0))
-        row['cancelled']  = str(sc.get('Cancelled', 0) + sc.get('Order Cancelled', 0))
-        
+        row['returned']   = str(sc.get('Order Return', 0))
+        row['cancelled']  = str(sc.get('Order Cancelled', 0))
     return overall
 
 def build_html(overall, detail):
@@ -139,10 +99,8 @@ def build_html(overall, detail):
 if __name__ == '__main__':
     overall_csv = fetch_sheet('Overall performance')
     detail_csv  = fetch_sheet('Model')
-    
     overall     = parse_overall(overall_csv)
-    detail, status_counts = parse_detail(detail_csv)
-    
-    overall     = merge_overall(overall, status_counts)
+    detail, type_counts, status_counts = parse_detail(detail_csv)
+    overall     = merge_overall(overall, type_counts, status_counts)
     build_html(overall, detail)
     print('Done!')
