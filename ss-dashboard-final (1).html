@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SS Incentive Dashboard – June 2026</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f0faf4;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 16px;color:#0f2d1a}
+.header{text-align:center;margin-bottom:28px}
+.badge{display:inline-block;background:#d1fae5;color:#065f46;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding:4px 14px;border-radius:20px;margin-bottom:10px}
+.header h1{font-size:26px;font-weight:700;color:#0f2d1a;margin-bottom:4px}
+.header p{font-size:13px;color:#4b7a5c}
+.search-card{background:white;border-radius:16px;padding:26px;width:100%;max-width:460px;box-shadow:0 4px 24px rgba(6,95,70,.10);margin-bottom:24px;border:1px solid #d1fae5}
+.search-label{font-size:13px;font-weight:600;color:#065f46;margin-bottom:8px;display:block}
+.input-row{display:flex;gap:10px}
+.input-row input{flex:1;border:1.5px solid #a7f3d0;border-radius:10px;padding:11px 14px;font-size:15px;font-family:'Inter',sans-serif;outline:none;transition:border .2s;color:#0f2d1a}
+.input-row input:focus{border-color:#059669}
+.input-row button{background:#059669;color:white;border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .2s}
+.input-row button:hover{background:#047857}
+.input-row button:disabled{background:#a7f3d0;cursor:not-allowed}
+.error-msg{margin-top:10px;font-size:13px;color:#dc2626;display:none}
+.loading-msg{margin-top:10px;font-size:13px;color:#059669;display:none;text-align:center}
+.hint{margin-top:10px;font-size:12px;color:#6b9f80;text-align:center}
+.results{width:100%;max-width:1000px;display:none}
+.back-btn{background:none;border:none;color:#059669;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:18px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px}
+.back-btn:hover{text-decoration:underline}
+.overall-hero{background:linear-gradient(135deg,#064e35,#059669,#34d399);border-radius:20px;padding:26px 28px;margin-bottom:20px;color:white}
+.hero-top{display:flex;align-items:center;gap:18px;margin-bottom:22px;flex-wrap:wrap}
+.avatar{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;flex-shrink:0;border:2px solid rgba(255,255,255,.4)}
+.hero-info h2{font-size:18px;font-weight:700}
+.hero-info p{font-size:12px;opacity:.8;margin-top:3px}
+.total-earning{margin-left:auto;text-align:right}
+.total-earning .lbl{font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.8px}
+.total-earning .val{font-size:30px;font-weight:700}
+.overall-grids{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ogroup{background:rgba(255,255,255,.13);border-radius:14px;padding:16px}
+.ogroup-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:.75;margin-bottom:12px}
+.ostat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ostat .olbl{font-size:10px;opacity:.7;margin-bottom:3px}
+.ostat .oval{font-size:20px;font-weight:700}
+.oval.warn{color:#fde68a}
+.oval.danger{color:#fca5a5}
+.oval.safe{color:#a7f3d0}
+.section-title-bar{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}
+.section-title-bar h3{font-size:15px;font-weight:700;color:#0f2d1a}
+.retailer-count{font-size:12px;color:#4b7a5c;background:#d1fae5;padding:4px 10px;border-radius:20px;font-weight:600}
+.filter-bar{background:white;border-radius:14px;padding:16px 18px;margin-bottom:16px;box-shadow:0 2px 12px rgba(6,95,70,.07);border:1px solid #d1fae5;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:160px}
+.filter-group label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#065f46}
+.filter-group input{border:1.5px solid #a7f3d0;border-radius:8px;padding:8px 12px;font-size:13px;font-family:'Inter',sans-serif;outline:none;color:#0f2d1a}
+.filter-group input:focus{border-color:#059669}
+.filter-clear{background:#f0faf4;border:1.5px solid #a7f3d0;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;color:#059669;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;align-self:flex-end}
+.filter-clear:hover{background:#d1fae5}
+.table-wrap{background:white;border-radius:16px;padding:20px;box-shadow:0 4px 20px rgba(6,95,70,.07);overflow-x:auto;border:1px solid #d1fae5}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#6b9f80;padding:0 12px 12px 0;border-bottom:1.5px solid #d1fae5;white-space:nowrap}
+tbody td{padding:10px 12px 10px 0;border-bottom:1px solid #f0faf4;color:#1a3d26;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#f0faf4}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700}
+.pill.online{background:#dbeafe;color:#1e40af}
+.pill.offline{background:#f3e8ff;color:#6d28d9}
+.pill.ground-tag{background:#fef3c7;color:#92400e}
+.pill.yes-green{background:#d1fae5;color:#065f46}
+.pill.no-red{background:#fee2e2;color:#991b1b}
+.amt{color:#059669;font-weight:600}
+.zero{color:#9ca3af}
+.no-rows{text-align:center;color:#6b9f80;padding:24px;font-size:13px}
+@media(max-width:600px){.overall-grids{grid-template-columns:1fr}.total-earning{margin-left:0;text-align:left;margin-top:6px}.filter-bar{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<div class="header" id="headerBlock">
+  <div class="badge">June 2026</div>
+  <h1>SS Incentive Dashboard</h1>
+  <p>Enter your SS mobile number to view your performance & payouts</p>
+</div>
+
+<div class="search-card" id="searchCard">
+  <span class="search-label">Your SS Number (Mobile)</span>
+  <div class="input-row">
+    <input type="tel" id="mobileInput" placeholder="e.g. 9955484033" maxlength="15" />
+    <button id="viewBtn" onclick="lookup()">View →</button>
+  </div>
+  <div class="error-msg" id="errorMsg"></div>
+  <div class="loading-msg" id="loadingMsg">⏳ Fetching your data...</div>
+  <div class="hint">🔒 Your data is private — only you can see your records.</div>
+</div>
+
+<div class="results" id="results">
+  <button class="back-btn" onclick="goBack()">← Back to Search</button>
+  <div class="overall-hero">
+    <div class="hero-top">
+      <div class="avatar" id="heroAvatar"></div>
+      <div id="heroInfo"></div>
+      <div class="total-earning" id="heroEarning"></div>
+    </div>
+    <div class="overall-grids" id="overallGrids"></div>
+  </div>
+  <div class="section-title-bar">
+    <h3>Retailer-wise Scorecard</h3>
+    <span class="retailer-count" id="retailerCount"></span>
+  </div>
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Filter by Retailer Number</label>
+      <input type="text" id="filterRetailer" placeholder="Enter retailer number..." oninput="applyFilters()" />
+    </div>
+    <div class="filter-group">
+      <label>Filter by SO Number</label>
+      <input type="text" id="filterSO" placeholder="Enter SO number..." oninput="applyFilters()" />
+    </div>
+    <button class="filter-clear" onclick="clearFilters()">✕ Clear</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>SS Number</th>
+          <th>Retailer Number</th>
+          <th>SO Number</th>
+          <th>Form Date</th>
+          <th>Type of Order</th>
+          <th>Order Status</th>
+          <th>Bonus Payment</th>
+          <th>Delivery Payment</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const SHEET_ID = '1jjJvuePQNW-S0QAUC0EyVd_Lx0IHYbksOheJEYmwuFA';
+let currentRows = [];
+
+// Use Google Visualization API (gviz) with JSONP — works from any origin including local files
+function gvizURL(sheet, query) {
+  const q = query ? encodeURIComponent(query) : encodeURIComponent('select *');
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheet)}&tq=${q}`;
+}
+
+function fetchGviz(sheet, query) {
+  return new Promise((resolve, reject) => {
+    const cbName = '_gviz_cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      document.body.removeChild(script);
+      reject(new Error('Timeout'));
+    }, 15000);
+
+    window[cbName] = function(data) {
+      clearTimeout(timeout);
+      delete window[cbName];
+      document.body.removeChild(script);
+      try {
+        const cols = data.table.cols.map(c => c.label || c.id);
+        const rows = (data.table.rows || []).map(r => {
+          const obj = {};
+          (r.c || []).forEach((cell, i) => {
+            obj[cols[i]] = cell ? (cell.v !== null && cell.v !== undefined ? String(cell.v) : '') : '';
+          });
+          return obj;
+        });
+        resolve({ cols, rows });
+      } catch(e) { reject(e); }
+    };
+
+    // gviz JSONP — tqx must include responseHandler
+    script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json%3BresponseHandler:${cbName}&sheet=${encodeURIComponent(sheet)}`;
+    script.onerror = () => { clearTimeout(timeout); delete window[cbName]; reject(new Error('Script load error')); };
+    document.body.appendChild(script);
+  });
+}
+
+function mob(v){ return (v||'').replace(/\D/g,''); }
+function n(v){ return parseFloat(v)||0; }
+function ni(v){ return parseInt(v)||0; }
+function fmtAmt(v){ const x=n(v); return x>0?`<span class="amt">₹${x.toLocaleString('en-IN')}</span>`:'<span class="zero">—</span>'; }
+function fmtDate(d){ return (!d||d==='')?'—':d; }
+
+function showErr(msg){ const e=document.getElementById('errorMsg'); e.textContent=msg; e.style.display='block'; }
+
+async function lookup() {
+  const input = document.getElementById('mobileInput').value.trim().replace(/\D/g,'');
+  if (!input) { showErr('Please enter your SS number.'); return; }
+
+  document.getElementById('errorMsg').style.display='none';
+  document.getElementById('loadingMsg').style.display='block';
+  document.getElementById('viewBtn').disabled=true;
+
+  try {
+    const [overall, detail] = await Promise.all([
+      fetchGviz('Sheet1'),
+      fetchGviz('Sheet2')
+    ]);
+
+    document.getElementById('loadingMsg').style.display='none';
+    document.getElementById('viewBtn').disabled=false;
+
+    // Sheet1: header on row 3 — skip rows where SS Number is blank/non-numeric
+    const ov = overall.rows.find(r => mob(r['SS Number']) === input);
+    const rows = detail.rows.filter(r => mob(r['SS Number']) === input);
+
+    if (!ov && !rows.length) {
+      showErr('❌ No records found for this number. Please check and try again.');
+      return;
+    }
+
+    render(input, rows, ov || null);
+  } catch(e) {
+    document.getElementById('loadingMsg').style.display='none';
+    document.getElementById('viewBtn').disabled=false;
+    showErr('⚠️ Could not load data. Please check your internet connection and try again.');
+    console.error(e);
+  }
+}
+
+function render(mobNum, rows, ov) {
+  document.getElementById('searchCard').style.display='none';
+  document.getElementById('headerBlock').style.display='none';
+  currentRows = rows;
+
+  const placBonus = ov ? n(ov['Placement Bonus']) : rows.reduce((s,r)=>s+n(r['Bonus Payment']),0);
+  const delBonus  = ov ? n(ov['Delivered Bonus'])  : rows.reduce((s,r)=>s+n(r['Delivery Payment']),0);
+  const grand     = placBonus + delBonus;
+
+  document.getElementById('heroAvatar').textContent = mobNum.slice(-2);
+  document.getElementById('heroInfo').innerHTML = `<h2>SS: ${mobNum}</h2><p>June 2026 Performance</p>`;
+  document.getElementById('heroEarning').innerHTML = `<div class="lbl">Total Earnings</div><div class="val">₹${grand.toLocaleString('en-IN')}</div>`;
+
+  if (ov) {
+    const att  = ni(ov['Orders Attempted']);
+    const plc  = ni(ov['Actual Orders Placed']);
+    const gnd  = ni(ov['Ground Orders']);
+    const old  = ni(ov['Old Orders']);
+    const del  = ni(ov['Delivered Orders']);
+    const rto  = ni(ov['RTO']);
+    const canc = ni(ov['Cancelled']);
+    const rate = plc>0 ? Math.round(del/plc*100) : 0;
+
+    document.getElementById('overallGrids').innerHTML = `
+      <div class="ogroup">
+        <div class="ogroup-title">📦 Order Split</div>
+        <div class="ostat-grid">
+          <div class="ostat"><div class="olbl">Orders Attempted</div><div class="oval">${att}</div></div>
+          <div class="ostat"><div class="olbl">Actual Placed</div><div class="oval safe">${plc}</div></div>
+          <div class="ostat"><div class="olbl">Ground Orders</div><div class="oval">${gnd}</div></div>
+          <div class="ostat"><div class="olbl">Old Orders</div><div class="oval ${old>0?'warn':''}">${old}</div></div>
+        </div>
+      </div>
+      <div class="ogroup">
+        <div class="ogroup-title">🚚 Order Status</div>
+        <div class="ostat-grid">
+          <div class="ostat"><div class="olbl">Delivered</div><div class="oval safe">${del}</div></div>
+          <div class="ostat"><div class="olbl">Delivery Rate</div><div class="oval ${rate>=70?'safe':'warn'}">${rate}%</div></div>
+          <div class="ostat"><div class="olbl">RTO</div><div class="oval ${rto>0?'danger':'safe'}">${rto}</div></div>
+          <div class="ostat"><div class="olbl">Cancelled</div><div class="oval ${canc>0?'warn':'safe'}">${canc}</div></div>
+        </div>
+      </div>
+      <div class="ogroup">
+        <div class="ogroup-title">💰 Placement Bonus</div>
+        <div class="ostat-grid">
+          <div class="ostat"><div class="olbl">Total Bonus</div><div class="oval safe">₹${placBonus.toLocaleString('en-IN')}</div></div>
+          <div class="ostat"><div class="olbl">Per Order Avg</div><div class="oval">${plc>0?'₹'+Math.round(placBonus/plc).toLocaleString('en-IN'):'—'}</div></div>
+        </div>
+      </div>
+      <div class="ogroup">
+        <div class="ogroup-title">🏆 Delivered Bonus</div>
+        <div class="ostat-grid">
+          <div class="ostat"><div class="olbl">Total Bonus</div><div class="oval safe">₹${delBonus.toLocaleString('en-IN')}</div></div>
+          <div class="ostat"><div class="olbl">Per Delivery Avg</div><div class="oval">${del>0?'₹'+Math.round(delBonus/del).toLocaleString('en-IN'):'—'}</div></div>
+        </div>
+      </div>`;
+  } else {
+    document.getElementById('overallGrids').innerHTML = '<div style="color:rgba(255,255,255,.7);font-size:13px">Overall summary not available for this SS.</div>';
+  }
+
+  document.getElementById('retailerCount').textContent = rows.length + ' retailers';
+  renderTable(rows);
+  document.getElementById('results').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function renderTable(rows) {
+  if (!rows.length) {
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="no-rows">No records match your filter.</td></tr>';
+    return;
+  }
+  document.getElementById('tableBody').innerHTML = rows.map(r => {
+    const type = (r['Type of Order']||'').toLowerCase();
+    const typeClass = type==='online'?'online':type==='offline'?'offline':'ground-tag';
+    const typeLabel = r['Type of Order']||'';
+    const status = r['Order Status']||'';
+    const statusGood = ['delivered','yes','1','considered'].some(x=>status.toLowerCase().includes(x));
+    const statusPill = status ? `<span class="pill ${statusGood?'yes-green':'no-red'}">${status}</span>` : '—';
+    return `<tr>
+      <td>${r['SS Number']||'—'}</td>
+      <td><strong>${r['Retailer Number']||'—'}</strong></td>
+      <td>${r['SO Number']||r['so number']||'—'}</td>
+      <td>${fmtDate(r['Form Date'])}</td>
+      <td>${typeLabel?`<span class="pill ${typeClass}">${typeLabel}</span>`:'—'}</td>
+      <td>${statusPill}</td>
+      <td>${fmtAmt(r['Bonus Payment'])}</td>
+      <td>${fmtAmt(r['Delivery Payment'])}</td>
+    </tr>`;
+  }).join('');
+}
+
+function applyFilters() {
+  const rF = document.getElementById('filterRetailer').value.trim().toLowerCase();
+  const sF = document.getElementById('filterSO').value.trim().toLowerCase();
+  const filtered = currentRows.filter(r => {
+    const ret = (r['Retailer Number']||'').toLowerCase();
+    const so  = (r['SO Number']||r['so number']||'').toLowerCase();
+    return (!rF || ret.includes(rF)) && (!sF || so.includes(sF));
+  });
+  document.getElementById('retailerCount').textContent = filtered.length + ' retailers';
+  renderTable(filtered);
+}
+
+function clearFilters() {
+  document.getElementById('filterRetailer').value='';
+  document.getElementById('filterSO').value='';
+  document.getElementById('retailerCount').textContent = currentRows.length + ' retailers';
+  renderTable(currentRows);
+}
+
+function goBack() {
+  document.getElementById('results').style.display='none';
+  document.getElementById('searchCard').style.display='block';
+  document.getElementById('headerBlock').style.display='block';
+  document.getElementById('mobileInput').value='';
+  document.getElementById('errorMsg').style.display='none';
+  currentRows=[];
+}
+
+document.getElementById('mobileInput').addEventListener('keydown', e => { if(e.key==='Enter') lookup(); });
+</script>
+</body>
+</html>
