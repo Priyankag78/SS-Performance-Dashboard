@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SS Incentive Dashboard – June 2026</title>
+<title>SS Incentive Dashboard</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -21,18 +21,14 @@ body{font-family:'Inter',sans-serif;background:#f0faf4;min-height:100vh;display:
 .input-row button:hover{background:#047857}
 .error-msg{margin-top:10px;font-size:13px;color:#dc2626;display:none}
 .hint{margin-top:10px;font-size:12px;color:#6b9f80;text-align:center}
-/* RESULTS */
 .results{width:100%;max-width:1020px;display:none}
 .back-btn{background:none;border:none;color:#059669;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:18px;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px}
 .back-btn:hover{text-decoration:underline}
-/* HERO */
 .overall-hero{background:linear-gradient(135deg,#064e35,#059669,#34d399);border-radius:20px;padding:26px 28px;margin-bottom:20px;color:white}
 .hero-top{display:flex;align-items:center;gap:18px;margin-bottom:22px;flex-wrap:wrap}
 .avatar{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;flex-shrink:0;border:2px solid rgba(255,255,255,.35)}
 .hero-info h2{font-size:18px;font-weight:700}
 .hero-info p{font-size:12px;opacity:.8;margin-top:3px}
-.hero-badges{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-.hero-badge{background:rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600}
 .total-earning{margin-left:auto;text-align:right}
 .total-earning .lbl{font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.8px}
 .total-earning .val{font-size:30px;font-weight:700}
@@ -43,7 +39,6 @@ body{font-family:'Inter',sans-serif;background:#f0faf4;min-height:100vh;display:
 .ostat .olbl{font-size:10px;opacity:.7;margin-bottom:3px}
 .ostat .oval{font-size:20px;font-weight:700}
 .oval.warn{color:#fde68a}.oval.danger{color:#fca5a5}.oval.safe{color:#a7f3d0}
-/* SCORECARD */
 .section-title-bar{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}
 .section-title-bar h3{font-size:15px;font-weight:700;color:#0f2d1a}
 .retailer-count{font-size:12px;color:#4b7a5c;background:#d1fae5;padding:4px 10px;border-radius:20px;font-weight:600}
@@ -60,15 +55,11 @@ thead th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase
 tbody td{padding:10px 12px 10px 0;border-bottom:1px solid #f0faf4;color:#1a3d26;vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover{background:#f0faf4}
-.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
-.pill.online{background:#dbeafe;color:#1e40af}
-.pill.offline{background:#f3e8ff;color:#6d28d9}
-.pill.considered{background:#d1fae5;color:#065f46}
-.pill.delivered{background:#d1fae5;color:#065f46}
-.pill.inprocess{background:#fef3c7;color:#92400e}
-.pill.old{background:#f3f4f6;color:#6b7280}
-.pill.rto{background:#fee2e2;color:#991b1b}
-.pill.default{background:#f0faf4;color:#374151}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.pill-green{background:#d1fae5;color:#065f46}
+.pill-yellow{background:#fef3c7;color:#92400e}
+.pill-red{background:#fee2e2;color:#991b1b}
+.pill-grey{background:#f3f4f6;color:#6b7280}
 .amt{color:#059669;font-weight:600}
 .zero{color:#9ca3af}
 .no-rows{text-align:center;color:#6b9f80;padding:24px;font-size:13px}
@@ -76,37 +67,30 @@ tbody tr:hover{background:#f0faf4}
 </style>
 </head>
 <body>
-
 <div class="header" id="headerBlock">
   <div class="badge">June 2026</div>
   <h1>SS Incentive Dashboard</h1>
   <p>Enter your SS mobile number to view your performance & payouts</p>
 </div>
-
 <div class="search-card" id="searchCard">
   <span class="search-label">Your SS Number (Mobile)</span>
   <div class="input-row">
     <input type="tel" id="mobileInput" placeholder="e.g. 9955484033" maxlength="15"/>
     <button onclick="lookup()">View &#8594;</button>
   </div>
-  <div class="error-msg" id="errorMsg">&#10060; No records found for this number. Please check and try again.</div>
+  <div class="error-msg" id="errorMsg">&#10060; No records found. Please check and try again.</div>
   <div class="hint">&#128274; Your data is private &#8212; only you can see your records.</div>
 </div>
-
 <div class="results" id="results">
   <button class="back-btn" onclick="goBack()">&#8592; Back to Search</button>
-
-  <!-- OVERALL HERO -->
   <div class="overall-hero">
     <div class="hero-top">
       <div class="avatar" id="heroAvatar"></div>
-      <div id="heroInfo"></div>
+      <div class="hero-info" id="heroInfo"></div>
       <div class="total-earning" id="heroEarning"></div>
     </div>
     <div class="overall-grids" id="overallGrids"></div>
   </div>
-
-  <!-- RETAILER SCORECARD -->
   <div class="section-title-bar">
     <h3>Retailer-wise Scorecard</h3>
     <span class="retailer-count" id="retailerCount"></span>
@@ -124,21 +108,13 @@ tbody tr:hover{background:#f0faf4}
   </div>
   <div class="table-wrap">
     <table>
-      <thead>
-        <tr>
-          <th>SS Number</th>
-          <th>Retailer Number</th>
-          <th>SO Number</th>
-          <th>Form Date</th>
-          <th>Type of Order</th>
-          <th>Order Status</th>
-          <th>Bonus Payment</th>
-          <th>Delivery Payment</th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th>Retailer Number</th><th>SO Number</th><th>Form Date</th>
+        <th>Type of Order</th><th>Order Status</th>
+        <th>Bonus Payment</th><th>Delivery Payment</th>
+      </tr></thead>
       <tbody id="tableBody"></tbody>
     </table>
   </div>
 </div>
-
 <script>

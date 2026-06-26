@@ -31,13 +31,9 @@ def parse_overall(csv_text):
         if not ss or not ss.isdigit() or ss == '0': continue
         def g(i): return cols[i].strip() if len(cols) > i else ''
         overall.append({
-            'ss':             ss,
-            'attempted':      g(1),
-            'placed':         g(4),
-            'rto':            g(6),
-            'placementBonus': g(8),
-            'colM':           g(9),
-            'colN':           g(10),
+            'ss': ss, 'attempted': g(1), 'ground': g(2),
+            'placed': g(4), 'placementBonus': g(8),
+            'colM': g(9), 'colN': g(10),
         })
     print(f'Overall: {len(overall)} rows')
     return overall
@@ -52,21 +48,18 @@ def parse_detail(csv_text):
         if not cols or len(cols) < 2 or not cols[1].strip(): continue
         def g(i): return cols[i].strip() if len(cols) > i else ''
         ss = g(1)
-        col_t = g(19)
-        col_u = g(20)
-        if col_t in ('Considered', 'Old Order'):
-            type_counts.setdefault(ss, Counter())[col_t] += 1
+        col_u = g(20)  # Col U = Type of Order
+        col_v = g(21)  # Col V = Order Status
         if col_u:
-            status_counts.setdefault(ss, Counter())[col_u] += 1
+            type_counts.setdefault(ss, Counter())[col_u] += 1
+        if col_v:
+            status_counts.setdefault(ss, Counter())[col_v] += 1
         detail.append({
-            'ss':            ss,
-            'retailer':      g(0),
-            'so':            g(16),
-            'formDate':      g(3),
-            'typeOfOrder':   g(19),
-            'orderStatus':   g(20),
-            'placedBonus':   g(13),
-            'deliveryBonus': g(15),
+            'ss': ss, 'retailer': g(0), 'so': g(16), 'formDate': g(3),
+            'typeOfOrder': g(20),   # Col U
+            'orderStatus': g(21),   # Col V
+            'placedBonus': g(13),   # Col N
+            'deliveryBonus': g(17), # Col R
         })
     print(f'Detail: {len(detail)} rows')
     return detail, type_counts, status_counts
@@ -76,31 +69,27 @@ def merge_overall(overall, type_counts, status_counts):
         ss = row['ss']
         tc = type_counts.get(ss, {})
         sc = status_counts.get(ss, {})
-        row['considered'] = str(tc.get('Considered', 0))
-        row['oldOrder']   = str(tc.get('Old Order', 0))
-        row['delivered']  = str(sc.get('Delivered', 0))
-        row['inProcess']  = str(sc.get('In Process', 0) + sc.get('In Progress', 0))
-        row['returned']   = str(sc.get('Order Return', 0))
-        row['cancelled']  = str(sc.get('Order Cancelled', 0))
+        row['delivered']  = str(tc.get('Delivered', 0))
+        row['inProcess']  = str(tc.get('In Process', 0) + tc.get('In Progress', 0))
+        row['oldOrder']   = str(tc.get('Old Order- Not Considered', 0))
+        row['returned']   = str(tc.get('Order Return', 0))
+        row['cancelled']  = str(tc.get('Order Cancelled', 0))
     return overall
 
 def build_html(overall, detail):
-    OVERALL_JS = json.dumps(overall, separators=(',',':'))
-    DETAIL_JS  = json.dumps(detail,  separators=(',',':'))
-    with open('template_part1.txt') as f:
-        part1 = f.read()
-    with open('template_part2.txt') as f:
-        part2 = f.read()
-    html = part1 + 'const OVERALL=' + OVERALL_JS + ';\nconst DETAIL=' + DETAIL_JS + ';' + part2
-    with open('index.html', 'w') as f:
-        f.write(html)
+    OJ = json.dumps(overall, separators=(',',':'))
+    DJ = json.dumps(detail, separators=(',',':'))
+    with open('template_part1.txt') as f: p1 = f.read()
+    with open('template_part2.txt') as f: p2 = f.read()
+    html = p1 + 'const OVERALL=' + OJ + ';\nconst DETAIL=' + DJ + ';' + p2
+    with open('index.html', 'w') as f: f.write(html)
     print(f'Built index.html ({len(html)//1024}KB)')
 
 if __name__ == '__main__':
     overall_csv = fetch_sheet('Overall performance')
-    detail_csv  = fetch_sheet('Model')
-    overall     = parse_overall(overall_csv)
-    detail, type_counts, status_counts = parse_detail(detail_csv)
-    overall     = merge_overall(overall, type_counts, status_counts)
+    detail_csv = fetch_sheet('Model')
+    overall = parse_overall(overall_csv)
+    detail, tc, sc = parse_detail(detail_csv)
+    overall = merge_overall(overall, tc, sc)
     build_html(overall, detail)
     print('Done!')
