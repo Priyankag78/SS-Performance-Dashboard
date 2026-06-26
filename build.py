@@ -23,7 +23,7 @@ def fetch_sheet(sheet_name):
 
 
 
-# ---------------- OVERALL ---------------- #
+# ---------------- OVERALL PERFORMANCE ---------------- #
 
 def parse_overall(csv_text):
 
@@ -52,7 +52,6 @@ def parse_overall(csv_text):
 
         cols = next(csv.reader(io.StringIO(line)))
 
-
         if not cols:
             continue
 
@@ -72,31 +71,30 @@ def parse_overall(csv_text):
 
         overall.append({
 
-            "ss":ss,
+            "ss": ss,
 
-            "attempted":g(1),
+            "attempted": g(1),
 
-            "placementBonus":g(8),
+            "placementBonus": g(8),
 
-            "deliveryBonus":g(10)
+            "deliveryBonus": g(10)
 
         })
 
 
-    print("Overall:",len(overall))
-
+    print("Overall rows:",len(overall))
 
     return overall
 
 
 
 
-# ---------------- MODEL ---------------- #
 
-def parse_detail(csv_text):
+# ---------------- MODEL TAB ---------------- #
+
+def parse_model(csv_text):
 
     reader = csv.reader(io.StringIO(csv_text))
-
 
     next(reader)
 
@@ -105,7 +103,7 @@ def parse_detail(csv_text):
 
     status_counts={}
 
-    placed_counts={}
+    order_counts={}
 
 
 
@@ -123,7 +121,7 @@ def parse_detail(csv_text):
 
 
 
-        ss = g(1)
+        ss=g(1)
 
 
         if not ss:
@@ -131,15 +129,15 @@ def parse_detail(csv_text):
 
 
 
-        # MODEL MAPPING
+        # MODEL COLUMN MAPPING
 
-        type_of_order = g(20)      # Col U
+        type_of_order = g(20)     # Col U
 
         order_status = g(21)      # Col V
 
 
 
-        # status calculation
+        # Status summary
 
         if ss not in status_counts:
 
@@ -153,39 +151,39 @@ def parse_detail(csv_text):
 
 
 
-        # actual orders
+        # Actual orders
 
-        placed_counts[ss]=placed_counts.get(ss,0)+1
+        order_counts[ss]=order_counts.get(ss,0)+1
 
 
 
 
         detail.append({
 
-            "ss":ss,
+            "ss": ss,
 
-            "retailer":g(0),       # Col A
+            "retailer": g(0),          # Col A
 
-            "so":g(16),
+            "so": g(16),               # SO Number
 
-            "formDate":g(3),       # Col D
+            "formDate": g(3),          # Col D
 
-            "typeOfOrder":type_of_order,
+            "typeOfOrder": type_of_order,
 
-            "orderStatus":order_status,
+            "orderStatus": order_status,
 
-            "bonusPayment":g(13),  # Col N
+            "bonusPayment": g(13),     # Col N
 
-            "deliveryPayment":g(17) # Col R
+            "deliveryPayment": g(17)   # Col R
 
         })
 
 
 
-    print("Model:",len(detail))
+    print("Model rows:",len(detail))
 
 
-    return detail,status_counts,placed_counts
+    return detail,status_counts,order_counts
 
 
 
@@ -193,7 +191,7 @@ def parse_detail(csv_text):
 
 # ---------------- MERGE ---------------- #
 
-def merge_overall(overall,status_counts,placed_counts):
+def merge_overall(overall,status_counts,order_counts):
 
 
     for row in overall:
@@ -206,33 +204,30 @@ def merge_overall(overall,status_counts,placed_counts):
 
 
 
-        row["actualPlaced"] = str(
-            placed_counts.get(ss,0)
+        row["actualPlaced"]=str(
+            order_counts.get(ss,0)
         )
 
 
 
-        row["delivered"] = str(
+        row["delivered"]=str(
             sc.get("Delivered",0)
         )
 
 
-
-        row["inProcess"] = str(
+        row["inProcess"]=str(
             sc.get("In Process",0)
             +
             sc.get("In Progress",0)
         )
 
 
-
-        row["returned"] = str(
+        row["returned"]=str(
             sc.get("Order Return",0)
         )
 
 
-
-        row["cancelled"] = str(
+        row["cancelled"]=str(
             sc.get("Order Cancelled",0)
         )
 
@@ -244,7 +239,8 @@ def merge_overall(overall,status_counts,placed_counts):
 
 
 
-# ---------------- HTML ---------------- #
+
+# ---------------- CREATE HTML ---------------- #
 
 def build_html(overall,detail):
 
@@ -264,7 +260,6 @@ def build_html(overall,detail):
 
     with open("template_part1.txt") as f:
         part1=f.read()
-
 
 
     with open("template_part2.txt") as f:
@@ -295,7 +290,8 @@ def build_html(overall,detail):
 
 
 
-    print("index.html generated")
+    print("index.html created")
+
 
 
 
@@ -316,24 +312,21 @@ if __name__=="__main__":
     )
 
 
-
     overall=parse_overall(
         overall_csv
     )
 
 
-    detail,status_counts,placed_counts=parse_detail(
+    detail,status_counts,order_counts=parse_model(
         model_csv
     )
-
 
 
     overall=merge_overall(
         overall,
         status_counts,
-        placed_counts
+        order_counts
     )
-
 
 
     build_html(
@@ -342,4 +335,4 @@ if __name__=="__main__":
     )
 
 
-    print("Done")
+    print("Completed")
