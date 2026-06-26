@@ -23,6 +23,7 @@ def parse_overall(csv_text):
         if val.isdigit() and len(val) >= 9:
             start = i
             break
+    print(f'Overall data starts at line {start}')
     for line in lines[start:]:
         reader = csv.reader(io.StringIO(line))
         cols = next(reader)
@@ -32,12 +33,15 @@ def parse_overall(csv_text):
         def g(i): return cols[i].strip() if len(cols) > i else ''
         overall.append({
             'ss':             ss,
-            'attempted':      g(1),
-            'placed':         g(4),
-            'rto':            g(6),
-            'placementBonus': g(8),
-            'colM':           g(9),
-            'colN':           g(10),
+            'attempted':      g(1),   # Col B
+            'ground':         g(2),   # Col C
+            'old':            g(3),   # Col D
+            'placed':         g(4),   # Col E - Orders Placed count
+            'delivered':      g(5),   # Col F
+            'rto':            g(6),   # Col G
+            'placementBonus': g(8),   # Col I - Placement Bonus amount
+            'colM':           g(9),   # Col J - Delivery count
+            'colN':           g(10),  # Col K - Delivery Bonus amount
         })
     print(f'Overall: {len(overall)} rows')
     return overall
@@ -52,21 +56,21 @@ def parse_detail(csv_text):
         if not cols or len(cols) < 2 or not cols[1].strip(): continue
         def g(i): return cols[i].strip() if len(cols) > i else ''
         ss = g(1)
-        col_t = g(19)
-        col_u = g(20)
+        col_t = g(19)  # Col T = Type of order
+        col_u = g(20)  # Col U = Order status
         if col_t in ('Considered', 'Old Order'):
             type_counts.setdefault(ss, Counter())[col_t] += 1
         if col_u:
             status_counts.setdefault(ss, Counter())[col_u] += 1
         detail.append({
             'ss':            ss,
-            'retailer':      g(0),
-            'so':            g(16),
-            'formDate':      g(3),
-            'typeOfOrder':   g(19),
-            'orderStatus':   g(20),
-            'placedBonus':   g(13),
-            'deliveryBonus': g(15),
+            'retailer':      g(0),   # Col A
+            'so':            g(16),  # Col Q
+            'formDate':      g(3),   # Col D
+            'type':          g(19),  # Col T - Type of order
+            'orderStatus':   g(20),  # Col U - Order status
+            'placedBonus':   g(13),  # Col N - Actual Bonus
+            'deliveryBonus': g(15),  # Col P - Delivery Payment
         })
     print(f'Detail: {len(detail)} rows')
     return detail, type_counts, status_counts
