@@ -14,7 +14,16 @@ def fetch_sheet(sheet_name):
 def parse_overall(csv_text):
     lines = csv_text.strip().split('\n')
     data = []
-    for line in lines[4:]:
+    # Auto-detect where SS number data starts (10-digit numbers)
+    start = 0
+    for i, line in enumerate(lines):
+        reader = csv.reader(io.StringIO(line))
+        cols = next(reader)
+        if cols and cols[0].strip().isdigit() and len(cols[0].strip()) >= 9:
+            start = i
+            break
+    print(f'Overall data starts at line {start}')
+    for line in lines[start:]:
         reader = csv.reader(io.StringIO(line))
         cols = next(reader)
         if not cols or not cols[0].strip(): continue
