@@ -59,14 +59,14 @@ def parse_detail(csv_text):
         if col_u:
             status_counts.setdefault(ss, Counter())[col_u] += 1
         detail.append({
-            'ss':            ss,
-            'retailer':      g(0),
-            'so':            g(16),
-            'formDate':      g(3),
-            'typeOfOrder':   g(19),
-            'orderStatus':   g(20),
-            'placedBonus':   g(13),
-            'deliveryBonus': g(15),
+    'ss': g(1),
+    'retailer': g(0),
+    'so': g(16),
+    'formDate': g(3),
+    'typeOfOrder': g(20),
+    'orderStatus': g(21),
+    'bonusPayment': g(13),
+    'deliveryPayment': g(17),
         })
     print(f'Detail: {len(detail)} rows')
     return detail, type_counts, status_counts
