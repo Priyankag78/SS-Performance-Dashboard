@@ -48,18 +48,16 @@ def parse_detail(csv_text):
         if not cols or len(cols) < 2 or not cols[1].strip(): continue
         def g(i): return cols[i].strip() if len(cols) > i else ''
         ss = g(1)
-        col_u = g(20)  # Col U = Type of Order
-        col_v = g(21)  # Col V = Order Status
+        col_t = g(19)  # Type of Order
+        col_u = g(20)  # Order Status
+        if col_t:
+            type_counts.setdefault(ss, Counter())[col_t] += 1
         if col_u:
-            type_counts.setdefault(ss, Counter())[col_u] += 1
-        if col_v:
-            status_counts.setdefault(ss, Counter())[col_v] += 1
+            status_counts.setdefault(ss, Counter())[col_u] += 1
         detail.append({
             'ss': ss, 'retailer': g(0), 'so': g(16), 'formDate': g(3),
-            'typeOfOrder': g(20),   # Col U
-            'orderStatus': g(21),   # Col V
-            'placedBonus': g(13),   # Col N
-            'deliveryBonus': g(17), # Col R
+            'typeOfOrder': col_t, 'orderStatus': col_u,
+            'placedBonus': g(13), 'deliveryBonus': g(17),
         })
     print(f'Detail: {len(detail)} rows')
     return detail, type_counts, status_counts
@@ -69,11 +67,13 @@ def merge_overall(overall, type_counts, status_counts):
         ss = row['ss']
         tc = type_counts.get(ss, {})
         sc = status_counts.get(ss, {})
-        row['delivered']  = str(tc.get('Delivered', 0))
-        row['inProcess']  = str(tc.get('In Process', 0) + tc.get('In Progress', 0))
-        row['oldOrder']   = str(tc.get('Old Order- Not Considered', 0))
-        row['returned']   = str(tc.get('Order Return', 0))
-        row['cancelled']  = str(tc.get('Order Cancelled', 0))
+        row['considered'] = str(tc.get('Considered', 0))
+        row['oldOrder']   = str(tc.get('Old Order', 0))
+        row['groundTeam'] = str(tc.get('Order Placed By Ground Team', 0))
+        row['delivered']  = str(sc.get('Delivered', 0))
+        row['inProcess']  = str(sc.get('In Process', 0))
+        row['inProgress'] = str(sc.get('In Progress', 0))
+        row['cancelled']  = str(sc.get('Order Cancelled', 0))
     return overall
 
 def build_html(overall, detail):
