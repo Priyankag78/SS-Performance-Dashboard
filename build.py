@@ -30,58 +30,73 @@ def parse_overall(csv_text):
         ss = cols[0].strip()
         if not ss or not ss.isdigit() or ss == '0': continue
         def g(i): return cols[i].strip() if len(cols) > i else ''
+        
+        # Section 1 & 4 from Overall Performance
         overall.append({
-            'ss':             ss,
-            'attempted':      g(1),
-            'placed':         g(4),
-            'rto':            g(6),
-            'placementBonus': g(8),
+            'ss':              ss,
+            'attempted':       g(1), # Keeping Attempted
+            'placementBonus': g(8), # Section 4 Data
             'colM':           g(9),
             'colN':           g(10),
+            'actualPlaced':   0,    # Will be computed from Model tab
+            'delivered':      0,    # Will be computed from Model tab
+            'inProcess':      0,    # Will be computed from Model tab
+            'returned':       0,    # Will be computed from Model tab
+            'cancelled':      0     # Will be computed from Model tab
         })
     print(f'Overall: {len(overall)} rows')
     return overall
 
 def parse_detail(csv_text):
     reader_obj = csv.reader(io.StringIO(csv_text))
-    next(reader_obj)
+    next(reader_obj) # Skip header row
     detail = []
-    type_counts = {}
+    
+    # Track status metric counters per SS
     status_counts = {}
+    
     for cols in reader_obj:
         if not cols or len(cols) < 2 or not cols[1].strip(): continue
         def g(i): return cols[i].strip() if len(cols) > i else ''
-        ss = g(1)
-        col_t = g(21)
-        col_u = g(22)
-        if col_t in ('Considered', 'Old Order'):
-            type_counts.setdefault(ss, Counter())[col_t] += 1
-        if col_u:
-            status_counts.setdefault(ss, Counter())[col_u] += 1
+        
+        ss = g(1)          # Col B
+        col_u = g(20)      # Col U (Type of Order)
+        col_v = g(21)      # Col V (Order Status)
+        
+        if col_v:
+            status_counts.setdefault(ss, Counter())[col_v] += 1
+            # If the order is not cancelled, count it as a successfully placed order
+            if col_v not in ('Cancelled', 'Order Cancelled'):
+                status_counts[ss]['__actual_placed__'] += 1
+                
+        # Building detailed retailer scorecard using requested columns from Model tab
         detail.append({
-    'ss': g(1),
-    'retailer': g(0),
-    'so': g(16),
-    'formDate': g(3),
-    'typeOfOrder': g(20),
-    'orderStatus': g(21),
-    'bonusPayment': g(13),
-    'deliveryPayment': g(17),
+            'ss':              ss,              # Col B
+            'retailer':        g(0),            # Col A
+            'so':              g(16),           # Col Q (if needed, otherwise can adjust)
+            'formDate':        g(3),            # Col D
+            'typeOfOrder':     col_u,           # Col U
+            'orderStatus':     col_v,           # Col V
+            'bonusPayment':    g(13),           # Col N
+            'deliveryPayment': g(17),           # Col R
         })
     print(f'Detail: {len(detail)} rows')
-    return detail, type_counts, status_counts
+    return detail, status_counts
 
-def merge_overall(overall, type_counts, status_counts):
+def merge_overall(overall, status_counts):
     for row in overall:
         ss = row['ss']
-        tc = type_counts.get(ss, {})
         sc = status_counts.get(ss, {})
-        row['considered'] = str(tc.get('Considered', 0))
-        row['oldOrder']   = str(tc.get('Old Order', 0))
+        
+        # Section 1 Update
+        row['actualPlaced'] = str(sc.get('__actual_placed__', 0))
+        
+        # Section 3 Update (Calculated entirely from Model tab metrics)
         row['delivered']  = str(sc.get('Delivered', 0))
         row['inProcess']  = str(sc.get('In Process', 0) + sc.get('In Progress', 0))
-        row['returned']   = str(sc.get('Order Return', 0))
-        row['cancelled']  = str(sc.get('Order Cancelled', 0))
+        row['returned']   = str(sc.get('Order Return', 0) + sc.get('Returned', 0))
+        row['cancelled']  = str(sc.get('Cancelled', 0) + sc.get('Order Cancelled', 0))
+        
     return overall
 
 def build_html(overall, detail):
@@ -99,8 +114,10 @@ def build_html(overall, detail):
 if __name__ == '__main__':
     overall_csv = fetch_sheet('Overall performance')
     detail_csv  = fetch_sheet('Model')
+    
     overall     = parse_overall(overall_csv)
-    detail, type_counts, status_counts = parse_detail(detail_csv)
-    overall     = merge_overall(overall, type_counts, status_counts)
+    detail, status_counts = parse_detail(detail_csv)
+    
+    overall     = merge_overall(overall, status_counts)
     build_html(overall, detail)
     print('Done!')
