@@ -52,23 +52,23 @@ function render(mobNum,rows,ov){
     document.getElementById('overallGrids').innerHTML=
       '<div class="ogroup"><div class="ogroup-title">&#128230; Order Split (Col T)</div><div class="ostat-grid">'+
         '<div class="ostat"><div class="olbl">Orders Attempted</div><div class="oval">'+att+'</div></div>'+
-        '<div class="ostat"><div class="olbl">Actual Placed</div><div class="oval safe">'+plc+'</div></div>'+
+        '<div class="ostat"><div class="olbl">Orders Placed (Col E)</div><div class="oval safe">'+ni(ov.placed)+'</div></div>'+
         '<div class="ostat"><div class="olbl">Considered</div><div class="oval safe">'+ni(ov.considered)+'</div></div>'+
         '<div class="ostat"><div class="olbl">Old Order</div><div class="oval '+(ni(ov.oldOrder)>0?'warn':'')+'">'+ni(ov.oldOrder)+'</div></div>'+
       '</div></div>'+
       '<div class="ogroup"><div class="ogroup-title">&#128666; Order Status (Col U)</div><div class="ostat-grid">'+
-        '<div class="ostat"><div class="olbl">Delivered</div><div class="oval safe">'+ni(ov.delivered)+'</div></div>'+
+        '<div class="ostat"><div class="olbl">Delivered (Col J)</div><div class="oval safe">'+ni(ov.colM)+'</div></div>'+
         '<div class="ostat"><div class="olbl">In Process</div><div class="oval warn">'+ni(ov.inProcess)+'</div></div>'+
         '<div class="ostat"><div class="olbl">Order Return</div><div class="oval '+(ni(ov.returned)>0?'danger':'')+'">'+ni(ov.returned)+'</div></div>'+
         '<div class="ostat"><div class="olbl">Cancelled</div><div class="oval '+(ni(ov.cancelled)>0?'danger':'')+'">'+ni(ov.cancelled)+'</div></div>'+
       '</div></div>'+
-      '<div class="ogroup"><div class="ogroup-title">&#128176; Order Placed Bonus</div><div class="ostat-grid">'+
-        '<div class="ostat"><div class="olbl">Bonus Amount</div><div class="oval safe">&#8377;'+colMVal.toLocaleString('en-IN')+'</div></div>'+
-        '<div class="ostat"><div class="olbl">Placement Bonus</div><div class="oval">&#8377;'+placBonus.toLocaleString('en-IN')+'</div></div>'+
+      '<div class="ogroup"><div class="ogroup-title">&#128176; Order Placed Bonus (Col I)</div><div class="ostat-grid">'+
+        '<div class="ostat"><div class="olbl">Bonus Amount</div><div class="oval safe">&#8377;'+placBonus.toLocaleString('en-IN')+'</div></div>'+
+        '<div class="ostat"><div class="olbl">Per Order Avg</div><div class="oval">'+(ni(ov.placed)>0?'&#8377;'+Math.round(placBonus/ni(ov.placed)).toLocaleString('en-IN'):'&#8212;')+'</div></div>'+
       '</div></div>'+
-      '<div class="ogroup"><div class="ogroup-title">&#127942; Delivery Bonus</div><div class="ostat-grid">'+
+      '<div class="ogroup"><div class="ogroup-title">&#127942; Delivery Bonus (Col K)</div><div class="ostat-grid">'+
         '<div class="ostat"><div class="olbl">Bonus Amount</div><div class="oval safe">&#8377;'+colNVal.toLocaleString('en-IN')+'</div></div>'+
-        '<div class="ostat"><div class="olbl">Per Delivery Avg</div><div class="oval">'+(ni(ov.delivered)>0?'&#8377;'+Math.round(colNVal/ni(ov.delivered)).toLocaleString('en-IN'):'&#8212;')+'</div></div>'+
+        '<div class="ostat"><div class="olbl">Per Delivery Avg</div><div class="oval">'+(ni(ov.colM)>0?'&#8377;'+Math.round(colNVal/ni(ov.colM)).toLocaleString('en-IN'):'&#8212;')+'</div></div>'+
       '</div></div>';
   } else {
     document.getElementById('overallGrids').innerHTML='<div style="color:rgba(255,255,255,.75);font-size:13px;padding:8px">Overall summary not available for this SS.</div>';
