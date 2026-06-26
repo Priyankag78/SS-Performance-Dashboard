@@ -35,9 +35,8 @@ function render(mobNum,rows,ov){
   // Col M = Delivery Bonus Online, Col P = Delivery Bonus Offline
   const placBonus = ov ? n(ov.placementBonus) : 0;
   const colMVal   = ov ? n(ov.colM) : 0;
-  const colNVal   = ov ? n(ov.colN) : 0;
-  const colPVal   = 0;
-  const grand     = placBonus + colMVal + colNVal;
+  const colPVal   = ov ? n(ov.colP) : 0;
+  const grand     = placBonus + colMVal + colPVal;
 
   document.getElementById('heroAvatar').textContent=mobNum.slice(-2);
   document.getElementById('heroInfo').innerHTML=
@@ -51,25 +50,25 @@ function render(mobNum,rows,ov){
     const del=ni(ov.delivered), rto=ni(ov.rto), canc=ni(ov.cancelled);
     const rate=plc>0?Math.round(del/plc*100):0;
     document.getElementById('overallGrids').innerHTML=
-      '<div class="ogroup"><div class="ogroup-title">&#128230; Order Split</div><div class="ostat-grid">'+
+      '<div class="ogroup"><div class="ogroup-title">&#128230; Order Split (Col T)</div><div class="ostat-grid">'+
         '<div class="ostat"><div class="olbl">Orders Attempted</div><div class="oval">'+att+'</div></div>'+
         '<div class="ostat"><div class="olbl">Actual Placed</div><div class="oval safe">'+plc+'</div></div>'+
-        '<div class="ostat"><div class="olbl">Ground Orders</div><div class="oval">'+gnd+'</div></div>'+
-        '<div class="ostat"><div class="olbl">Old Orders</div><div class="oval '+(old>0?'warn':'')+'">'+old+'</div></div>'+
+        '<div class="ostat"><div class="olbl">Considered</div><div class="oval safe">'+ni(ov.considered)+'</div></div>'+
+        '<div class="ostat"><div class="olbl">Old Order</div><div class="oval '+(ni(ov.oldOrder)>0?'warn':'')+'">'+ni(ov.oldOrder)+'</div></div>'+
       '</div></div>'+
-      '<div class="ogroup"><div class="ogroup-title">&#128666; Order Status</div><div class="ostat-grid">'+
-        '<div class="ostat"><div class="olbl">Delivered</div><div class="oval safe">'+del+'</div></div>'+
-        '<div class="ostat"><div class="olbl">Delivery Rate</div><div class="oval '+(rate>=70?'safe':'warn')+'">'+rate+'%</div></div>'+
-        '<div class="ostat"><div class="olbl">RTO</div><div class="oval '+(rto>0?'danger':'safe')+'">'+rto+'</div></div>'+
-        '<div class="ostat"><div class="olbl">Cancelled</div><div class="oval '+(canc>0?'warn':'safe')+'">'+canc+'</div></div>'+
+      '<div class="ogroup"><div class="ogroup-title">&#128666; Order Status (Col U)</div><div class="ostat-grid">'+
+        '<div class="ostat"><div class="olbl">Delivered</div><div class="oval safe">'+ni(ov.delivered)+'</div></div>'+
+        '<div class="ostat"><div class="olbl">In Process</div><div class="oval warn">'+ni(ov.inProcess)+'</div></div>'+
+        '<div class="ostat"><div class="olbl">Order Return</div><div class="oval '+(ni(ov.returned)>0?'danger':'')+'">'+ni(ov.returned)+'</div></div>'+
+        '<div class="ostat"><div class="olbl">Cancelled</div><div class="oval '+(ni(ov.cancelled)>0?'danger':'')+'">'+ni(ov.cancelled)+'</div></div>'+
       '</div></div>'+
-      '<div class="ogroup"><div class="ogroup-title">&#128176; Order Placed Bonus (Col M)</div><div class="ostat-grid">'+
+      '<div class="ogroup"><div class="ogroup-title">&#128176; Order Placed Bonus</div><div class="ostat-grid">'+
         '<div class="ostat"><div class="olbl">Bonus Amount</div><div class="oval safe">&#8377;'+colMVal.toLocaleString('en-IN')+'</div></div>'+
         '<div class="ostat"><div class="olbl">Placement Bonus</div><div class="oval">&#8377;'+placBonus.toLocaleString('en-IN')+'</div></div>'+
       '</div></div>'+
-      '<div class="ogroup"><div class="ogroup-title">&#127942; Delivery Payment (Col N)</div><div class="ostat-grid">'+
-        '<div class="ostat"><div class="olbl">Payment Amount</div><div class="oval safe">&#8377;'+colPVal.toLocaleString('en-IN')+'</div></div>'+
-        '<div class="ostat"><div class="olbl">Per Delivery Avg</div><div class="oval">'+(del>0?'&#8377;'+Math.round(colNVal/del).toLocaleString('en-IN'):'&#8212;')+'</div></div>'+
+      '<div class="ogroup"><div class="ogroup-title">&#127942; Delivery Bonus</div><div class="ostat-grid">'+
+        '<div class="ostat"><div class="olbl">Bonus Amount</div><div class="oval safe">&#8377;'+colNVal.toLocaleString('en-IN')+'</div></div>'+
+        '<div class="ostat"><div class="olbl">Per Delivery Avg</div><div class="oval">'+(ni(ov.delivered)>0?'&#8377;'+Math.round(colNVal/ni(ov.delivered)).toLocaleString('en-IN'):'&#8212;')+'</div></div>'+
       '</div></div>';
   } else {
     document.getElementById('overallGrids').innerHTML='<div style="color:rgba(255,255,255,.75);font-size:13px;padding:8px">Overall summary not available for this SS.</div>';
@@ -99,8 +98,8 @@ function renderTable(rows){
       '<td>'+(r.formDate||'&#8212;')+'</td>'+
       '<td>'+typeHtml+'</td>'+
       '<td>'+statusHtml+'</td>'+
-      '<td>'+fmtAmt(r.placedBonus)+'</td>'+
-      '<td>'+fmtAmt(r.deliveryBonus)+'</td>'+
+      '<td>'+fmtAmt(r.bonusPayment)+'</td>'+
+      '<td>'+fmtAmt(r.deliveryPayment)+'</td>'+
     '</tr>';
   }).join('');
 }
