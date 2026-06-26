@@ -14,7 +14,7 @@ def fetch_sheet(sheet_name):
 def parse_overall(csv_text):
     lines = csv_text.strip().split('\n')
     data = []
-    for line in lines[3:]:
+    for line in lines[4:]:
         reader = csv.reader(io.StringIO(line))
         cols = next(reader)
         if not cols or not cols[0].strip(): continue
@@ -31,10 +31,10 @@ def parse_overall(csv_text):
             'rto':            g(6),
             'cancelled':      g(7),
             'placementBonus': g(8),
-            'colM':           g(12),
-            'colN':           g(13),
-            'typeOfOrder':    g(15),
-            'orderStatus':    g(16),
+            'colM':           g(9),
+            'colN':           g(10),
+            'typeOfOrder':    g(14),
+            'orderStatus':    g(15),
         })
     print(f'Overall: {len(data)} rows')
     return data
