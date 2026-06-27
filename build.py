@@ -12,10 +12,21 @@ def fetch_sheet(sheet_name):
     with req.urlopen(url) as r:
         return r.read().decode('utf-8')
 
+def find_first(headers, name):
+    for i, h in enumerate(headers):
+        if h.strip().lower() == name.strip().lower():
+            return i
+    return -1
+
+def find_after(headers, name, after_idx):
+    for i, h in enumerate(headers):
+        if i > after_idx and h.strip().lower() == name.strip().lower():
+            return i
+    return -1
+
 def parse_overall(csv_text):
     lines = csv_text.strip().split('\n')
     overall = []
-    # Find first data row (10+ digit SS number)
     start = 0
     for i, line in enumerate(lines):
         reader = csv.reader(io.StringIO(line))
@@ -41,7 +52,6 @@ def parse_overall(csv_text):
 
 def parse_detail(csv_text):
     lines = csv_text.strip().split('\n')
-    # Find header row
     header_idx = 0
     for i, line in enumerate(lines):
         if 'Retailer' in line:
@@ -51,28 +61,16 @@ def parse_detail(csv_text):
     headers = [h.strip() for h in next(reader)]
     print(f'Model headers: {headers}')
 
-    # Find columns by name - LAST match for duplicates
-    def find_last(name):
-        result = -1
-        for i, h in enumerate(headers):
-            if h.lower() == name.lower():
-                result = i
-        return result
-    def find_first(name):
-        for i, h in enumerate(headers):
-            if h.lower() == name.lower():
-                return i
-        return -1
-
-    # Column mapping
-    ci_ss       = find_first('SS Number')
-    ci_retailer = find_first('Retailer Number')
-    ci_so       = find_first('SO Number')
-    ci_form     = find_first('Form Date')
-    ci_type     = find_last('Type of order')    # LAST match skips Col E
-    ci_status   = find_last('Order status')     # Order status
-    ci_bonus    = find_first('Actual Bonus')     # Col N
-    ci_delivery = find_first('RTO')              # Col R as requested
+    ci_ss       = find_first(headers, 'SS Number')
+    ci_retailer = find_first(headers, 'Retailer Number')
+    ci_so       = find_first(headers, 'SO Number')
+    ci_form     = find_first(headers, 'Form Date')
+    ci_type     = find_first(headers, 'Type of order')
+    if ci_type == find_first(headers, 'Type of Order'):
+        ci_type = find_after(headers, 'Type of order', 15)
+    ci_status   = find_after(headers, 'Order status', ci_type)
+    ci_bonus    = find_first(headers, 'Placed Bonus')
+    ci_delivery = find_first(headers, 'Delivery Bonus')
     print(f'Columns: ss={ci_ss} retailer={ci_retailer} type={ci_type} status={ci_status} bonus={ci_bonus} delivery={ci_delivery}')
 
     detail = []
